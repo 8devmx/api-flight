@@ -6,9 +6,9 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 $users = new Classes\Users;
 
-Flight::route('GET /users', [$users, 'selectAll']);
+Flight::route('GET /users(/@page)', [$users, 'selectAll']);
 
-Flight::route('GET /users/@id', [$users, 'selectOne']);
+Flight::route('GET /user/@id', [$users, 'selectOne']);
 
 Flight::route('POST /auth', [$users, 'auth']);
 

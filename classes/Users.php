@@ -6,6 +6,8 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use flight;
 
+use function PHPSTORM_META\type;
+
 class Users
 {
   private $db;
@@ -45,11 +47,42 @@ class Users
 
     Flight::json($array);
   }
-  function selectAll()
+  function selectAll($page)
   {
+    if (!isset($page)) {
+      $page = 1;
+    }
+
+    if (!intval($page)) {
+      Flight::halt(400, json_encode([
+        "error" => 'Petición incorrecta',
+        "status" => 'error'
+      ]));
+    }
     $query = $this->db->prepare("SELECT * FROM usuarios");
     $query->execute();
-    $data = $query->fetchAll();
+    $total = $query->rowCount();
+    $limit = 10;
+    $pages = ceil($total / $limit);
+
+    if ($total < 1) {
+      Flight::halt(204, json_encode([
+        "error" => 'No hay contenido para mostrar',
+        "status" => 'error'
+      ]));
+    }
+    if ($page > $pages) {
+      Flight::halt(400, json_encode([
+        "error" => 'Petición incorrecta',
+        "status" => 'error'
+      ]));
+    }
+
+    $start = ($page - 1) * $limit;
+
+    $query2 = $this->db->prepare("SELECT * FROM usuarios LIMIT $start, $limit");
+    $query2->execute();
+    $data = $query2->fetchAll();
     $array = [];
     foreach ($data as $row) {
       $array[] = [
@@ -64,7 +97,9 @@ class Users
 
 
     Flight::json([
-      "total_rows" => $query->rowCount(),
+      "total_rows" => $total,
+      "page" => intval($page),
+      "total_pages" => $pages,
       "rows" => $array
     ]);
   }
